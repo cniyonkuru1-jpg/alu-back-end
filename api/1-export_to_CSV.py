@@ -1,0 +1,48 @@
+#!/usr/bin/python3
+"""Export one employee's TODO tasks to CSV."""
+
+import csv
+import json
+import sys
+from urllib.error import HTTPError, URLError
+from urllib.request import urlopen
+
+
+API_URL = "https://jsonplaceholder.typicode.com"
+
+
+def get_json(url):
+    """Return decoded JSON from a URL."""
+    with urlopen(url) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def main():
+    """Fetch an employee's tasks and write the required CSV file."""
+    if len(sys.argv) != 2:
+        return
+
+    try:
+        employee_id = int(sys.argv[1])
+        employee = get_json("{}/users/{}".format(API_URL, employee_id))
+        tasks = get_json("{}/todos?userId={}".format(API_URL, employee_id))
+    except (ValueError, HTTPError, URLError):
+        return
+
+    if not isinstance(employee, dict) or not isinstance(tasks, list):
+        return
+
+    username = employee.get("username", "")
+    with open("{}.csv".format(employee_id), "w", newline="") as csv_file:
+        writer = csv.writer(csv_file, quoting=csv.QUOTE_ALL)
+        for task in tasks:
+            writer.writerow([
+                employee_id,
+                username,
+                task.get("completed", False),
+                task.get("title", "")
+            ])
+
+
+if __name__ == "__main__":
+    main()
