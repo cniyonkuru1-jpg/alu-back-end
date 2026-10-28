@@ -1,23 +1,15 @@
 #!/usr/bin/python3
-"""Display an employee's completed TODO tasks."""
+"""Display the completed TODO tasks for one employee."""
 
-import json
+import requests
 import sys
-from urllib.error import HTTPError, URLError
-from urllib.request import urlopen
 
 
 API_URL = "https://jsonplaceholder.typicode.com"
 
 
-def get_json(url):
-    """Return decoded JSON from a URL."""
-    with urlopen(url) as response:
-        return json.loads(response.read().decode("utf-8"))
-
-
 def main():
-    """Fetch and print an employee's TODO progress."""
+    """Fetch and print the TODO progress for one employee."""
     if len(sys.argv) != 2:
         return
 
@@ -26,14 +18,10 @@ def main():
     except ValueError:
         return
 
-    try:
-        employee = get_json("{}/users/{}".format(API_URL, employee_id))
-        tasks = get_json("{}/todos?userId={}".format(API_URL, employee_id))
-    except (HTTPError, URLError, ValueError):
-        return
-
-    if not isinstance(employee, dict) or not isinstance(tasks, list):
-        return
+    employee = requests.get("{}/users/{}".format(
+        API_URL, employee_id)).json()
+    tasks = requests.get("{}/todos?userId={}".format(
+        API_URL, employee_id)).json()
 
     employee_name = employee.get("name", "")
     completed_tasks = [task for task in tasks if task.get("completed")]
